@@ -100,7 +100,7 @@ int main(){
         SDL_WINDOWPOS_CENTERED,
         WIDTH,
         HEIGHT,
-        0
+        SDL_WINDOW_RESIZABLE
     );
 
     // Icone de la fenetre
@@ -145,6 +145,11 @@ int main(){
     RayCasting *raycasting = malloc(sizeof(RayCasting));
     memset(raycasting, 0, sizeof(RayCasting));
 
+    raycasting->width = WIDTH;
+    raycasting->height = HEIGHT;
+    raycasting->num_rays = WIDTH/2;
+    raycasting->results = malloc(raycasting->num_rays * sizeof(*raycasting->results));
+
     raycasting->textures[1] = load_texture(renderer, "assets/wall.bmp");
     raycasting->textures[2] = load_texture(renderer, "assets/monkey.bmp");
     raycasting->textures[3] = load_texture(renderer, "assets/wuzaki.bmp");
@@ -173,6 +178,25 @@ int main(){
                     running = 0;
                 }
             }
+            else if(event.type == SDL_WINDOWEVENT) {
+                if(event.window.event == SDL_WINDOWEVENT_RESIZED) {
+                    int new_width = event.window.data1;
+                    int new_height = event.window.data2;
+
+                    // Mettre à jour les valeurs lié à la taille de la fenetre
+                    raycasting->width = new_width;
+                    raycasting->height = new_height;
+                    raycasting->num_rays = new_width/2;
+
+                    raycasting->textures[1] = load_texture(renderer, "assets/wall.bmp");
+                    raycasting->textures[2] = load_texture(renderer, "assets/monkey.bmp");
+                    raycasting->textures[3] = load_texture(renderer, "assets/wuzaki.bmp");
+
+                    // floorcasting->floor_texture = load_floor_texture(renderer, "assets/floor.bmp");
+                    // floorcasting->ceil_texture = load_floor_texture(renderer, "assets/floor.bmp");
+
+                }
+            }
         }
 
         Uint32 now = SDL_GetTicks();
@@ -199,6 +223,9 @@ int main(){
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
         SDL_RenderClear(renderer);
 
+        // Get New WIDTH/HEIGHT pour raycasting/floorcasting
+        //SDL_GetWindowSize(screen, &raycasting->width, &raycasting->height);
+
         process(renderer, map, &player, raycasting, dt);
         draw(renderer, map, floorcasting, raycasting, &player);
         mouse_control(screen, &player, dt);
@@ -209,6 +236,7 @@ int main(){
         if (raycasting->textures[i])
             SDL_DestroyTexture(raycasting->textures[i]);
     }
+    free(raycasting->results);
     free(raycasting);
 
     SDL_DestroyTexture(floorcasting->floor_texture);

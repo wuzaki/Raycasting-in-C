@@ -18,10 +18,9 @@
 #define TEXTURE_SIZE 232
 
 typedef struct {
-    double results[NUM_RAYS][4]; // 4 infos pour chque rayon envoyé
-    double depth_list[NUM_RAYS];
-    double wall_column_list[NUM_RAYS];
-    double wall_pos_list[NUM_RAYS][2];
+    int width, height;
+    int num_rays;
+    double (*results)[4]; // 4 infos pour chque rayon envoyé
     SDL_Texture *textures[10];
 } RayCasting;
 
