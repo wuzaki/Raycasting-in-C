@@ -98,7 +98,6 @@ void draw_textured_walls(SDL_Renderer *renderer, RayCasting *raycasting) {
             dst.y = 0;
             dst.h = HEIGHT;
         }
-
         SDL_RenderCopy(renderer, texture, &src, &dst);
     }
 }

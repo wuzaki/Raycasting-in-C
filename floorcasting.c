@@ -54,7 +54,7 @@ SDL_Texture* load_floor_texture(SDL_Renderer *renderer, char *path) {
 
 void draw_floor(SDL_Renderer *renderer, FloorCasting *floorcasting, Player *player) {
     void *floor_pixels = NULL;
-    void *ceil_pixels  = NULL;
+    void *ceil_pixels = NULL;
     int floor_pitch, ceil_pitch;
 
     if (SDL_LockTexture(floorcasting->floor_texture, NULL, &floor_pixels, &floor_pitch) != 0) {
@@ -82,61 +82,31 @@ void draw_floor(SDL_Renderer *renderer, FloorCasting *floorcasting, Player *play
     int screen_pitch;
     SDL_LockTexture(screen_tex, NULL, &screen_pixels, &screen_pitch);
 
-    Uint32 *floor_buf  = (Uint32 *)floor_pixels;
-    Uint32 *ceil_buf   = (Uint32 *)ceil_pixels;
+    Uint32 *floor_buf = (Uint32 *)floor_pixels;
+    Uint32 *ceil_buf = (Uint32 *)ceil_pixels;
     Uint32 *screen_buf = (Uint32 *)screen_pixels;
 
-    int half_h        = HEIGHT / 2;
-    int floor_stride  = floor_pitch  / 4;
-    int ceil_stride   = ceil_pitch   / 4;
+    int half_h = HEIGHT / 2;
+    int floor_stride = floor_pitch  / 4;
+    int ceil_stride = ceil_pitch   / 4;
     int screen_stride = screen_pitch / 4;
 
-    /*
-     * SCREEN_DIST = (WIDTH/2) / tan(HALF_FOV)
-     *
-     * Dans ray_cast, la profondeur réelle d'un rayon est corrigée du fishbowl :
-     *   depth_real = depth_raw * cos(player->angle - ray_angle)
-     * Cela revient à une projection perspective où la colonne x correspond
-     * à un angle : ray_angle = player->angle + atan((x - WIDTH/2) / SCREEN_DIST)
-     *
-     * Pour synchroniser, le floorcasting doit calculer pixel par pixel
-     * la direction 3D exacte de chaque rayon en espace caméra, puis
-     * retrouver la coordonnée monde au sol.
-     *
-     * Pour la ligne y (y > half_h) :
-     *   - La hauteur relative depuis le centre : dy_screen = y - half_h
-     *   - Pour la colonne x : dx_screen = x - WIDTH/2
-     *   - Le vecteur rayon normalisé en espace caméra : (dx_screen, SCREEN_DIST, dy_screen)
-     *   - On veut l'intersection avec le plan z = 0 (le sol, joueur à z = 0.5)
-     *     => t = 0.5 / dy_screen  (car le joueur est à mi-hauteur)
-     *   - Coordonnée monde :
-     *       world_x = player->x + cos(player->angle) * SCREEN_DIST * t
-     *                           - sin(player->angle) * dx_screen * t
-     *       world_y = player->y + sin(player->angle) * SCREEN_DIST * t
-     *                           + cos(player->angle) * dx_screen * t
-     *
-     * Ce calcul est EXACTEMENT cohérent avec la correction fishbowl du raycasting.
-     */
     double cos_a = cos(player->angle);
     double sin_a = sin(player->angle);
     double half_w = WIDTH / 2.0;
 
     for (int y = half_h + 1; y < HEIGHT; y++) {
         double dy_screen = (double)(y - half_h);
-
-        /* t = facteur d'échelle : distance au plan du sol.
-         * Joueur à z = 0.5, sol à z = 0 → t = 0.5 / (dy_screen / SCREEN_DIST)
-         * Simplifié : t = SCREEN_DIST * 0.5 / dy_screen               */
         double t = SCREEN_DIST * 0.5 / dy_screen;
 
         for (int x = 0; x < WIDTH; x++) {
             double dx_screen = (double)(x - half_w);
 
-            /* Coordonnée monde du pixel (x, y) */
+            // Coordonnée monde du pixel (x, y)
             double world_x = player->x + (cos_a * SCREEN_DIST - sin_a * dx_screen) * t / SCREEN_DIST;
             double world_y = player->y + (sin_a * SCREEN_DIST + cos_a * dx_screen) * t / SCREEN_DIST;
 
-            /* Coordonnée dans la texture */
+            // Coordonnée dans la texture
             int tx = (int)(world_x * TEXTURE_SIZE) % TEXTURE_SIZE;
             int ty = (int)(world_y * TEXTURE_SIZE) % TEXTURE_SIZE;
 
@@ -146,7 +116,7 @@ void draw_floor(SDL_Renderer *renderer, FloorCasting *floorcasting, Player *play
             if (ty >= TEXTURE_SIZE) ty = TEXTURE_SIZE - 1;
 
             Uint32 floor_color = floor_buf[ty * floor_stride + tx];
-            Uint32 ceil_color  = ceil_buf [ty * ceil_stride  + tx];
+            Uint32 ceil_color = ceil_buf [ty * ceil_stride  + tx];
 
             screen_buf[y * screen_stride + x] = floor_color;
             screen_buf[(HEIGHT - y - 1) * screen_stride + x] = ceil_color;
