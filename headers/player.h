@@ -1,6 +1,7 @@
 #ifndef PLAYER_H
 #define PLAYER_H
 
+// #include <SDL2/SDL.h>
 #include <C:/msys64/mingw64/include/SDL2/SDL.h>
 
 typedef struct {
