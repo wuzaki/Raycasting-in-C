@@ -5,12 +5,6 @@
 #include <C:/msys64/mingw64/include/SDL2/SDL.h>
 
 #include "headers/settings.h"
-#define WIDTH 1280
-#define HEIGHT 680
-#define TILE_SIZE 50
-
-#define SPEED 3.0f
-#define ROT_SPEED 0.008
 
 typedef struct {
     float x;
@@ -32,7 +26,7 @@ int is_wall(int map[11][12], int x, int y){
     if(x < 0 || x >= 12 || y < 0 || y >= 11){
         return 1;
     }
-    return map[y][x] == 1;
+    return map[y][x] != 0;
 }
 
 int check_walls(int map[11][12], Player *player, float dx, float dy){

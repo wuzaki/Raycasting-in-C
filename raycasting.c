@@ -25,17 +25,82 @@ typedef struct {
     double wall_column_list[NUM_RAYS];
     double wall_pos_list[NUM_RAYS][2];
     SDL_Texture *textures[10];
-} Raycasting;
+} RayCasting;
 
 SDL_Texture* load_texture(SDL_Renderer *renderer, char *path){
-    SDL_Surface *surface = SDL_LoadBMP(path);
-    if (!surface){
+    SDL_Surface *original = SDL_LoadBMP(path);
+    if (!original){
         printf("Erreur chargement %s : %s\n", path, SDL_GetError());
         return NULL;
     }
-    SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, surface);
-    SDL_FreeSurface(surface);
+
+    // Créer une surface vide de la bonne taille
+    SDL_Surface *scaled = SDL_CreateRGBSurface(
+        0, TEXTURE_SIZE, TEXTURE_SIZE, 32,
+        original->format->Rmask,
+        original->format->Gmask,
+        original->format->Bmask,
+        original->format->Amask
+    );
+
+    if (!scaled){
+        printf("Erreur création surface : %s\n", SDL_GetError());
+        SDL_FreeSurface(original);
+        return NULL;
+    }
+
+    // Redimensionner original → scaled
+    SDL_Rect dst_rect = {0, 0, TEXTURE_SIZE, TEXTURE_SIZE};
+    SDL_BlitScaled(original, NULL, scaled, &dst_rect);
+    SDL_FreeSurface(original);
+
+    SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, scaled);
+    SDL_FreeSurface(scaled);
     return texture;
+}
+
+void draw_textured_walls(SDL_Renderer *renderer, RayCasting *raycasting) {
+    for (int ray = 0; ray < NUM_RAYS; ray++) {
+        double depth = raycasting->results[ray][0];
+        double proj_height = raycasting->results[ray][1];
+        int texture_id = (int)raycasting->results[ray][2];
+        double offset = raycasting->results[ray][3];
+
+        SDL_Texture *texture = raycasting->textures[texture_id];
+        if (!texture) continue;
+
+        // Colonne source dans la texture (axe X)
+        int src_x = (int)(offset * (TEXTURE_SIZE - SCALE));
+        if (src_x < 0) src_x = 0;
+        if (src_x > TEXTURE_SIZE - SCALE) src_x = TEXTURE_SIZE - SCALE;
+
+        SDL_Rect src, dst;
+        src.x = src_x;
+        src.w = SCALE;
+
+        dst.x = ray * SCALE;
+        dst.w = SCALE;
+
+        if (proj_height < HEIGHT) {
+            // Cas normal : la colonne tient dans l'écran
+            src.y = 0;
+            src.h = TEXTURE_SIZE;
+
+            dst.y = (int)(HEIGHT / 2 - proj_height / 2);
+            dst.h = (int)proj_height;
+        } else {
+            // Cas clamp : mur très proche, on ne prend qu'une tranche de texture
+            double texture_height = TEXTURE_SIZE * HEIGHT / proj_height;
+
+            src.y = (int)(TEXTURE_SIZE / 2 - texture_height / 2);
+            src.h = (int)texture_height;
+
+            dst.y = 0;
+            dst.h = HEIGHT;
+        }
+
+        SDL_RenderCopy(renderer, texture, &src, &dst);
+    }
 }
 
 void draw_wall_2D(SDL_Renderer* renderer, Player *player, double hit_x, double hit_y){
@@ -50,7 +115,7 @@ void draw_wall_2D(SDL_Renderer* renderer, Player *player, double hit_x, double h
     );
 }
 
-void draw_wall_3D(SDL_Renderer* renderer, Raycasting *raycasting){
+void draw_wall_3D(SDL_Renderer* renderer, RayCasting *raycasting){
     for(int ray = 0; ray<NUM_RAYS; ray++){
         // Couleur mur
         float color = 255 / (1 + pow(raycasting->results[ray][0], 5) * 0.00002);
@@ -67,7 +132,7 @@ void draw_wall_3D(SDL_Renderer* renderer, Raycasting *raycasting){
     }
 }
 
-void ray_cast(Raycasting *raycasting, int map[11][12], Player *player){
+void ray_cast(RayCasting *raycasting, int map[11][12], Player *player){
     double ox = player->x;
     double oy = player->y;
     int texture_hor = 1;
@@ -103,7 +168,7 @@ void ray_cast(Raycasting *raycasting, int map[11][12], Player *player){
             if(tile_hor_x < 0 || tile_hor_x >= 12 || tile_hor_y < 0 || tile_hor_y >= 11){
                  break;
             }
-            if(map[tile_hor_y][tile_hor_x]==1){
+            if(map[tile_hor_y][tile_hor_x]!=0){
                 texture_hor = map[tile_hor_y][tile_hor_x];
                 break;
             }
@@ -126,7 +191,7 @@ void ray_cast(Raycasting *raycasting, int map[11][12], Player *player){
             if(tile_vert_x < 0 || tile_vert_x >= 12 || tile_vert_y < 0 || tile_vert_y >= 11){
                 break;
             }
-            if(map[tile_vert_y][tile_vert_x]==1){
+            if(map[tile_vert_y][tile_vert_x]!=0){
                 texture_vert = map[tile_vert_y][tile_vert_x];
                  break;
             }
@@ -136,23 +201,21 @@ void ray_cast(Raycasting *raycasting, int map[11][12], Player *player){
         }
 
         // DEPTH
-        // double hit_x;
-        // double hit_y;
         int texture;
 
         if(depth_vert < depth_hor)
         {
             depth = depth_vert;
             texture = texture_vert;
-            // hit_x = x_vert;
-            // hit_y = y_vert;
-            if(cos_a > 0){offset = y_vert;} else{offset = (1 - y_vert);}
+            if(cos_a > 0){ offset = fmod(y_vert, 1.0); }
+            else          { offset = 1.0 - fmod(y_vert, 1.0); }
         }
         else
         {
             depth = depth_hor;
             texture = texture_hor;
-            if(sin_a > 0){offset = (1 - x_hor);} else{offset = x_hor;}
+            if(sin_a > 0){ offset = 1.0 - fmod(x_hor, 1.0); }
+            else          { offset = fmod(x_hor, 1.0); }
         }
 
         // Remove Fishbowl effect
@@ -174,6 +237,7 @@ void ray_cast(Raycasting *raycasting, int map[11][12], Player *player){
     }
 }
 
-void update_raycasting(SDL_Renderer* renderer, Raycasting *raycasting, int map[11][12], Player *player){
+void update_raycasting(SDL_Renderer* renderer, RayCasting *raycasting, int map[11][12], Player *player){
     ray_cast(raycasting, map, player);
+    // draw_textured_walls(renderer, raycasting);
 }

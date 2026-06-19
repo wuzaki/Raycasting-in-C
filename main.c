@@ -5,6 +5,7 @@
 
 #include "headers/player.h"
 #include "headers/raycasting.h"
+#include "headers/floorcasting.h"
 
 // === Settings ===
 #define WIDTH 1280
@@ -19,7 +20,7 @@
 #define MOUSE_BORDER_RIGHT (WIDTH - MOUSE_BORDER_LEFT)
 
 // === Process ===
-void process(SDL_Renderer* renderer, int map[ROWS][COLS], Player *player, Raycasting *raycasting, float dt){
+void process(SDL_Renderer* renderer, int map[ROWS][COLS], Player *player, RayCasting *raycasting, float dt){
     update_player(map, player, dt);
     update_raycasting(renderer, raycasting, map, player);
 }
@@ -84,10 +85,12 @@ void draw_map(SDL_Renderer* renderer, int map[ROWS][COLS]){
 }
 
 // === Draw ===
-void draw(SDL_Renderer* renderer, int map[ROWS][COLS], Raycasting *raycasting, Player *player){
+void draw(SDL_Renderer* renderer, int map[ROWS][COLS], FloorCasting *floorcasting, RayCasting *raycasting, Player *player){
     // draw_map(renderer, map);
-    draw_wall_3D(renderer, raycasting);
+    // draw_wall_3D(renderer, raycasting);
     // draw_player(renderer, player);
+    draw_floor(renderer, floorcasting, player);
+    draw_textured_walls(renderer, raycasting);
 }
 
 // === Main ===
@@ -107,8 +110,8 @@ int main(){
     int map[11][12] = {
         {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
         {1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1},
-        {1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1},
-        {1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1},
+        {1, 0, 0, 0, 0, 2, 1, 0, 0, 0, 0, 1},
+        {1, 0, 0, 0, 0, 3, 1, 0, 0, 0, 0, 1},
         {1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1},
         {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
         {1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1},
@@ -133,8 +136,22 @@ int main(){
     init_player(&player, 1.5, 1.5);
     int speed = 1;
 
-    Raycasting *raycasting = malloc(sizeof(Raycasting));
-    memset(raycasting, 0, sizeof(Raycasting));
+    RayCasting *raycasting = malloc(sizeof(RayCasting));
+    memset(raycasting, 0, sizeof(RayCasting));
+
+    raycasting->textures[1] = load_texture(renderer, "assets/wall.bmp");
+    raycasting->textures[2] = load_texture(renderer, "assets/monkey.bmp");
+    raycasting->textures[3] = load_texture(renderer, "assets/wuzaki.bmp");
+    // raycasting->textures[4] = load_texture(renderer, "assets/wall2.bmp");
+
+    FloorCasting *floorcasting = malloc(sizeof(FloorCasting));
+    memset(floorcasting, 0, sizeof(FloorCasting));
+
+    floorcasting->floor_texture = load_floor_texture(renderer, "assets/floor.bmp");
+    floorcasting->ceil_texture = load_floor_texture(renderer, "assets/floor.bmp");
+
+    SDL_Texture *floor_texture[10];
+    SDL_Texture *ceil_texture[10];
 
     int running = 1;
     SDL_Event event;
@@ -177,12 +194,20 @@ int main(){
         SDL_RenderClear(renderer);
 
         process(renderer, map, &player, raycasting, dt);
-        draw(renderer, map, raycasting, &player);
+        draw(renderer, map, floorcasting, raycasting, &player);
         mouse_control(screen, &player, dt);
 
         SDL_RenderPresent(renderer);
     }
+    for (int i = 0; i < 10; i++) {
+        if (raycasting->textures[i])
+            SDL_DestroyTexture(raycasting->textures[i]);
+    }
     free(raycasting);
+
+    SDL_DestroyTexture(floorcasting->floor_texture);
+    SDL_DestroyTexture(floorcasting->ceil_texture);
+    free(floorcasting);
 
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(screen);

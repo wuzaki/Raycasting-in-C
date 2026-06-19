@@ -19,10 +19,16 @@
 
 typedef struct {
     double results[NUM_RAYS][4]; // 4 infos pour chque rayon envoyé
-} Raycasting;
+    double depth_list[NUM_RAYS];
+    double wall_column_list[NUM_RAYS];
+    double wall_pos_list[NUM_RAYS][2];
+    SDL_Texture *textures[10];
+} RayCasting;
 
+void draw_textured_walls(SDL_Renderer *renderer, RayCasting *raycasting);
 void draw_wall_2D(SDL_Renderer* renderer, Player *player, double hit_x, double hit_y);
-void draw_wall_3D(SDL_Renderer* renderer, Raycasting *raycasting);
-void update_raycasting(SDL_Renderer* renderer, Raycasting *raycasting, int map[11][12], Player *player);
+void draw_wall_3D(SDL_Renderer* renderer, RayCasting *raycasting);
+void update_raycasting(SDL_Renderer* renderer, RayCasting *raycasting, int map[11][12], Player *player);
+SDL_Texture* load_texture(SDL_Renderer *renderer, char *path);
 
 #endif
