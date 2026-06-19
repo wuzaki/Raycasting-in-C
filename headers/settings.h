@@ -18,8 +18,8 @@
 
 #define TEXTURE_SIZE 232
 
-// #include <SDL2/SDL.h>
-#include <C:/msys64/mingw64/include/SDL2/SDL.h>
+#include <SDL2/SDL.h>
+// #include <C:/msys64/mingw64/include/SDL2/SDL.h>
 
 void draw_circle(SDL_Renderer* renderer, int cx, int cy, int radius);
 

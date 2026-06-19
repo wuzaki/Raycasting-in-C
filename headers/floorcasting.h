@@ -1,8 +1,8 @@
 #ifndef FLOORCASTING_H
 #define FLOORCASTING_H
 
-// #include <SDL2/SDL.h>
-#include <C:/msys64/mingw64/include/SDL2/SDL.h>
+#include <SDL2/SDL.h>
+// #include <C:/msys64/mingw64/include/SDL2/SDL.h>
 
 typedef struct {
     SDL_Texture *floor_texture;

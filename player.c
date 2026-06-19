@@ -1,8 +1,8 @@
 #include <stdio.h>
 #define _USE_MATH_DEFINES
 #include <math.h>
-// #include <SDL2/SDL.h>
-#include <C:/msys64/mingw64/include/SDL2/SDL.h>
+#include <SDL2/SDL.h>
+//#include <C:/msys64/mingw64/include/SDL2/SDL.h>
 
 #include "headers/settings.h"
 

@@ -1,6 +1,6 @@
 #include <stdio.h>
 // #include <SDL2/SDL.h>
-#include <C:/msys64/mingw64/include/SDL2/SDL.h>
+#include <SDL2/SDL.h>
 
 #define WIDTH 1280
 #define HEIGHT 680
