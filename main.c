@@ -100,7 +100,7 @@ int main(){
         SDL_WINDOWPOS_CENTERED,
         WIDTH,
         HEIGHT,
-        SDL_WINDOW_RESIZABLE
+        0
     );
 
     // Icone de la fenetre
@@ -145,10 +145,7 @@ int main(){
     RayCasting *raycasting = malloc(sizeof(RayCasting));
     memset(raycasting, 0, sizeof(RayCasting));
 
-    raycasting->width = WIDTH;
-    raycasting->height = HEIGHT;
-    raycasting->num_rays = WIDTH/2;
-    raycasting->results = malloc(raycasting->num_rays * sizeof(*raycasting->results));
+    raycasting->results = malloc(NUM_RAYS * sizeof(*raycasting->results));
 
     raycasting->textures[1] = load_texture(renderer, "assets/wall.bmp");
     raycasting->textures[2] = load_texture(renderer, "assets/monkey.bmp");
@@ -176,25 +173,6 @@ int main(){
             else if(event.type == SDL_KEYDOWN){
                 if(event.key.keysym.sym == SDLK_ESCAPE){
                     running = 0;
-                }
-            }
-            else if(event.type == SDL_WINDOWEVENT) {
-                if(event.window.event == SDL_WINDOWEVENT_RESIZED) {
-                    int new_width = event.window.data1;
-                    int new_height = event.window.data2;
-
-                    // Mettre à jour les valeurs lié à la taille de la fenetre
-                    raycasting->width = new_width;
-                    raycasting->height = new_height;
-                    raycasting->num_rays = new_width/2;
-
-                    raycasting->textures[1] = load_texture(renderer, "assets/wall.bmp");
-                    raycasting->textures[2] = load_texture(renderer, "assets/monkey.bmp");
-                    raycasting->textures[3] = load_texture(renderer, "assets/wuzaki.bmp");
-
-                    // floorcasting->floor_texture = load_floor_texture(renderer, "assets/floor.bmp");
-                    // floorcasting->ceil_texture = load_floor_texture(renderer, "assets/floor.bmp");
-
                 }
             }
         }

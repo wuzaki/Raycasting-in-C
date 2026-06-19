@@ -5,23 +5,21 @@
 
 #include "headers/player.h"
 
-// #define WIDTH 1280
-// #define HEIGHT 680
+#define WIDTH 1280
+#define HEIGHT 680
 #define TILE_SIZE 50
 
 #define FOV (3.14 / 3)
 #define HALF_FOV (FOV / 2)
-// #define NUM_RAYS (WIDTH/2)
-// #define DELTA_ANGLE (FOV/NUM_RAYS)
-// #define SCREEN_DIST ((WIDTH/2) / tan(HALF_FOV))
-// #define SCALE (WIDTH/NUM_RAYS)
+#define NUM_RAYS (WIDTH/2)
+#define DELTA_ANGLE (FOV/NUM_RAYS)
+#define SCREEN_DIST ((WIDTH/2) / tan(HALF_FOV))
+#define SCALE (WIDTH/NUM_RAYS)
 #define MAX_DEPTH 20
 
 #define TEXTURE_SIZE 232
 
 typedef struct {
-    int width, height;
-    int num_rays;
     double (*results)[4]; // 4 infos pour chque rayon envoyé
     SDL_Texture *textures[10];
 } RayCasting;
@@ -59,9 +57,6 @@ SDL_Texture* load_texture(SDL_Renderer *renderer, char *path){
 }
 
 void draw_textured_walls(SDL_Renderer *renderer, RayCasting *raycasting) {
-    int NUM_RAYS = raycasting->num_rays;
-    int SCALE = (raycasting->width/NUM_RAYS);
-
     for (int ray = 0; ray < NUM_RAYS; ray++) {
         double depth = raycasting->results[ray][0];
         double proj_height = raycasting->results[ray][1];
@@ -83,22 +78,22 @@ void draw_textured_walls(SDL_Renderer *renderer, RayCasting *raycasting) {
         dst.x = ray * SCALE;
         dst.w = SCALE;
 
-        if (proj_height < raycasting->height) {
+        if (proj_height < HEIGHT) {
             // Cas normal : la colonne tient dans l'écran
             src.y = 0;
             src.h = TEXTURE_SIZE;
 
-            dst.y = (int)(raycasting->height / 2 - proj_height / 2);
+            dst.y = (int)(HEIGHT / 2 - proj_height / 2);
             dst.h = (int)proj_height;
         } else {
             // Cas clamp : mur très proche, on ne prend qu'une tranche de texture
-            double texture_height = TEXTURE_SIZE * raycasting->height / proj_height;
+            double texture_height = TEXTURE_SIZE * HEIGHT / proj_height;
 
             src.y = (int)(TEXTURE_SIZE / 2 - texture_height / 2);
             src.h = (int)texture_height;
 
             dst.y = 0;
-            dst.h = raycasting->height;
+            dst.h = HEIGHT;
         }
         SDL_RenderCopy(renderer, texture, &src, &dst);
     }
@@ -117,9 +112,6 @@ void draw_wall_2D(SDL_Renderer* renderer, Player *player, double hit_x, double h
 }
 
 void draw_wall_3D(SDL_Renderer* renderer, RayCasting *raycasting){
-    int NUM_RAYS = raycasting->num_rays;
-    int SCALE = (raycasting->width/NUM_RAYS);
-
     for(int ray = 0; ray<NUM_RAYS; ray++){
         // Couleur mur
         float color = 255 / (1 + pow(raycasting->results[ray][0], 5) * 0.00002);
@@ -128,7 +120,7 @@ void draw_wall_3D(SDL_Renderer* renderer, RayCasting *raycasting){
         // Colonne 3D
         SDL_Rect rect = {
             ray * SCALE,
-            raycasting->height/2 - raycasting->results[ray][1]/2,
+            HEIGHT/2 - raycasting->results[ray][1]/2,
             SCALE,
             raycasting->results[ray][1]
         };
@@ -137,11 +129,6 @@ void draw_wall_3D(SDL_Renderer* renderer, RayCasting *raycasting){
 }
 
 void ray_cast(RayCasting *raycasting, int map[11][12], Player *player){
-    int NUM_RAYS = raycasting->num_rays;
-    int SCALE = (raycasting->width/NUM_RAYS);
-    double DELTA_ANGLE = (FOV/NUM_RAYS);
-    double SCREEN_DIST = (raycasting->width/2) / tan(HALF_FOV);
-
     double ox = player->x;
     double oy = player->y;
     int texture_hor = 1;
@@ -233,7 +220,7 @@ void ray_cast(RayCasting *raycasting, int map[11][12], Player *player){
         // Projection
         proj_height = SCREEN_DIST / (depth + 0.0001);
 
-        // int ray_result[4] = {depth, proj_height, texture, offset};
+        int ray_result[4] = {depth, proj_height, texture, offset};
         raycasting->results[ray][0] = depth;
         raycasting->results[ray][1] = proj_height;
         raycasting->results[ray][2] = texture;
