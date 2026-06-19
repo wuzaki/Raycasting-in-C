@@ -25,12 +25,9 @@ void process(SDL_Renderer* renderer, int map[ROWS][COLS], Player *player, RayCas
     update_raycasting(renderer, raycasting, map, player);
 }
 
-void mouse_control(SDL_Window* screen, Player *player, float dt)
-{
+void mouse_control(SDL_Window* screen, Player *player, float dt){
     int mouse_x, mouse_y;
-
     SDL_GetMouseState(&mouse_x, &mouse_y);
-
     if(mouse_x < MOUSE_BORDER_LEFT || mouse_x > MOUSE_BORDER_RIGHT)
     {
         SDL_WarpMouseInWindow(
@@ -41,7 +38,6 @@ void mouse_control(SDL_Window* screen, Player *player, float dt)
     }
 
     int mouse_dx, mouse_dy;
-
     SDL_GetRelativeMouseState(&mouse_dx, &mouse_dy);
 
     // clamp du déplacement souris
@@ -106,6 +102,16 @@ int main(){
         HEIGHT,
         0
     );
+
+    // Icone de la fenetre
+    SDL_Surface *icon = SDL_LoadBMP("assets/icon.bmp");
+    if(icon){
+        SDL_SetWindowIcon(screen, icon);
+        SDL_FreeSurface(icon);
+    }
+    else{
+        printf("Erreur chargement icone : %s\n", SDL_GetError());
+    }
 
     int map[11][12] = {
         {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
